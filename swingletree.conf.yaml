@@ -1,0 +1,7 @@
+sonar:
+  port: 4020
+  secret: # basic auth password protecting the webhook
+  base: # SonarQube base url
+  context: sonarqube # defines the check status name
+  token: # API token
+  debug: false # log SonarQube webhook event requests on debug level
