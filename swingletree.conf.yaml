@@ -5,3 +5,6 @@ sonar:
   context: sonarqube # defines the check status name
   token: # API token
   debug: false # log SonarQube webhook event requests on debug level
+
+  urls:
+    scotty: # scotty base url
