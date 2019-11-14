@@ -1,11 +1,51 @@
-# Swingletree [![Maintainability](https://api.codeclimate.com/v1/badges/e792e95e2c8e96e98b24/maintainability)][code-climate] [![Docker Automated build](https://img.shields.io/docker/automated/werkbank/swingletree.svg)][dockerhub-repo]
+# Swingletree SonarQube Plugin
 
-<img src="static/icon.svg" width="55" align="right">
+SonarQube is a tool for static code analysis. This plugin supports the SonarQube Developer Edition.
 
-Swingletree gives you the possibility to integrate a variety of software quality tools into GitHub to secure the quality of your software.
+## Features
 
-Take a look at our [GitHub Page][swingletree] for more information (and the Swingletree documentation).
+The Swingletree SonarQube Plugin offers following functionalities:
 
-[code-climate]: https://codeclimate.com/github/error418/swingletree/maintainability
-[dockerhub-repo]: https://hub.docker.com/r/werkbank/swingletree/tags/
-[swingletree]: https://error418.github.io/swingletree/
+* Attaches SonarQube findings to Pull Request via GitHub Check Run annotations
+
+Processed data is persisted to ElasticSearch (if enabled) and can be processed to reports using Kibana or Grafana.
+
+
+## General CI build configuration
+
+Swingletree needs some context when receiving webhook events from SonarQube. Therefore some additional analysis properties need to be set when running a `sonar-scanner` during your CI build.
+
+* `sonar.analysis.commitId`, containing the commit id
+* `sonar.analysis.repository`, containing the full repository path
+
+You can set the parameters when invoking the `sonar-scanner`. For example:
+
+```
+sonar-scanner \
+    -Dsonar.analysis.commitId=628f5175ada0d685fd7164baa7c6382c1f25cab4 \
+    -Dsonar.analysis.repository=error418/swingletree
+```
+
+Of course these values (at least `commitId`) need to be acquired dynamically on each build.
+
+## Reference branch analysis
+
+A reference branch can be set by providing the SonarQube property `sonar.branch.target`.
+SonarQube will run the branch analysis in relation to the provided branch name.
+
+## Repository-specific Configuration
+
+Repository-specific behaviour can be configured by placing a `.swingletree.yaml` in the repository root directory. Swingletree reads from the master branch file only.
+
+Swingletree fails on any findings, if no `.swingletree.yaml` is available in the repository.
+
+```yaml
+plugin:
+  sonar:
+    # if true: require developer action if coverage is declining
+    blockCoverageLoss: false
+```
+
+| Property | Description | Default |
+| --- | --- | --- |
+| `blockCoverageLoss` | require developer action on coverage loss | `false` |
