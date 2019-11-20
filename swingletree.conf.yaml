@@ -7,4 +7,4 @@ sonar:
   debug: false # log SonarQube webhook event requests on debug level
 
   urls:
-    scotty: # scotty base url
+    scotty: http://scotty:3000 # scotty base url
