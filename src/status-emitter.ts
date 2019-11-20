@@ -138,7 +138,7 @@ class SonarStatusEmitter {
 
   }
 
-  public async sendReport(event: SonarAnalysis, source: Harness.ScmSource) {
+  public async sendReport(event: SonarAnalysis, source: Harness.ScmSource, uid: string) {
     const summaryTemplateData: SonarCheckRunSummaryTemplate = { event: event.analysisEvent };
 
     (source as Harness.GithubSource).branch = event.analysisEvent.branch ? [ event.analysisEvent.branch.name ] : null ;
@@ -147,6 +147,7 @@ class SonarStatusEmitter {
       sender: this.context,
       link: this.dashboardUrl(event.analysisEvent),
       source: source,
+      uuid: uid,
       checkStatus: event.analysisEvent.qualityGate.status == QualityGateStatus.OK ? Harness.Conclusion.PASSED : Harness.Conclusion.BLOCKED,
       title: `${event.analysisEvent.qualityGate.status}`
     };

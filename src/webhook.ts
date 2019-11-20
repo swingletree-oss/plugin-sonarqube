@@ -60,9 +60,11 @@ class SonarWebhook {
       source.sha = webhookData.properties["sonar.analysis.commitId"];
       source.branch = [ webhookData.properties["sonar.branch.target"] ];
 
+      const uid = webhookData.properties["sonar.analysis.buildId"];
+
       const analysisEvent = new SonarAnalysis(webhookData);
 
-      this.statusEmitter.sendReport(analysisEvent, source);
+      this.statusEmitter.sendReport(analysisEvent, source, uid);
 
     } else {
       log.debug("SonarQube webhook data did not contain repo and/or commit-sha data. This event will be ignored.");
