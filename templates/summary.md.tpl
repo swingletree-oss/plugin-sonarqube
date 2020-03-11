@@ -9,11 +9,13 @@ SonarQube Branch analysis was performed in relation to `{{ event.targetBranch }}
 {% endfor -%}
 {% endif %}
 
-{% if event.qualityGate.status == "OK" -%}
+{% if event.qualityGate -%}
+{%   if event.qualityGate.status == "OK" -%}
     :ok:
-{%- else -%}
+{%-  else -%}
     :x:
-{%- endif %} Quality Gate *"{{ event.qualityGate.name }}"* reported status *{{ event.qualityGate.status }}*<br>
+{%-  endif %} Quality Gate *"{{ event.qualityGate.name }}"* reported status *{{ event.qualityGate.status }}*<br>
+{%- endif %}
 
 {#- branch coverage report -#}
 {% if branchCoverage -%}
@@ -32,7 +34,7 @@ SonarQube Branch analysis was performed in relation to `{{ event.targetBranch }}
 {%   endif -%}
 {% endif %}
 
-{% if (event.qualityGate.conditions) and (event.qualityGate.conditions.length > 0) -%}
+{% if (event.qualityGate) and (event.qualityGate.conditions) and (event.qualityGate.conditions.length > 0) -%}
 ### Gate Conditions
 
 | Metric | | Status | Constraint | Current Value |
