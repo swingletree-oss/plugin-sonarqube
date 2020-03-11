@@ -75,7 +75,7 @@ describe("Sonar Status Emitter", () => {
           status: "OK"
         },
         serverUrl: "",
-        status: "OK",
+        status: "SUCCESS",
         taskId: "task"
       }
     };
@@ -83,7 +83,7 @@ describe("Sonar Status Emitter", () => {
 
 
   it("should calculate branch delta for short living branches", async () => {
-    const result = await uut.sendReport(analysisData, source);
+    const result = await uut.sendReport(analysisData, source, "testid");
 
     sinon.assert.calledOnce(scottyMock.sendReport as any);
     sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("title", sinon.match("- Coverage: 90.1 (+2.1%)")));
@@ -93,15 +93,43 @@ describe("Sonar Status Emitter", () => {
     analysisData.analysisEvent.branch.isMain = true;
     analysisData.analysisEvent.branch.name = undefined;
     analysisData.analysisEvent.project.key = "test";
-    await uut.sendReport(analysisData, source);
+    await uut.sendReport(analysisData, source, "testid");
 
     sinon.assert.calledOnce(scottyMock.sendReport as any);
     sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("title", sinon.match("- Coverage: 70.6 (-19.5%)")));
   });
 
+  it("should handle failing sonarqube background tasks", async () => {
+    analysisData.analysisEvent.branch.name = "dev-no-issues";
+    delete analysisData.analysisEvent.qualityGate;
+    analysisData.analysisEvent.status = "FAILED";
+    await uut.sendReport(analysisData, source, "testid");
+
+    sinon.assert.calledOnce(scottyMock.sendReport as any);
+    sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("checkStatus", sinon.match("analysis_failure")));
+    sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("title", sinon.match("SonarQube task failure")));
+  });
+
+  it("should handle missing qualityGates", async () => {
+    analysisData.analysisEvent.branch.name = "dev-no-issues";
+    delete analysisData.analysisEvent.qualityGate;
+    await uut.sendReport(analysisData, source, "testid");
+
+    sinon.assert.calledOnce(scottyMock.sendReport as any);
+    sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("checkStatus", sinon.match("undecisive")));
+  });
+
+  it("should handle happy case", async () => {
+    analysisData.analysisEvent.branch.name = "dev-no-issues";
+    await uut.sendReport(analysisData, source, "testid");
+
+    sinon.assert.calledOnce(scottyMock.sendReport as any);
+    sinon.assert.calledWith(scottyMock.sendReport as any, sinon.match.has("checkStatus", sinon.match("passed")));
+  });
+
   it("should not contain undefined annotation paths in GitHub check run", async () => {
     analysisData.analysisEvent.project.key = "component-subproject-test";
-    await uut.sendReport(analysisData, source);
+    await uut.sendReport(analysisData, source, "testid");
 
     sinon.assert.calledOnce(scottyMock.sendReport as any);
 
@@ -116,7 +144,7 @@ describe("Sonar Status Emitter", () => {
 
   it("should determine annotation paths", async () => {
     analysisData.analysisEvent.project.key = "component-subproject-test";
-    await uut.sendReport(analysisData, source);
+    await uut.sendReport(analysisData, source, "testid");
 
     sinon.assert.calledOnce(scottyMock.sendReport as any);
 
@@ -128,7 +156,7 @@ describe("Sonar Status Emitter", () => {
   it("should set start and end lines", async () => {
     analysisData.analysisEvent.project.key = "component-subproject-test";
 
-    const result = await uut.sendReport(analysisData, source);
+    const result = await uut.sendReport(analysisData, source, "testid");
 
     const annotation = result.annotations.find(it => {
       return (it instanceof Harness.FileAnnotation) &&

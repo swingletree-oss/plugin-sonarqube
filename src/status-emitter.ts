@@ -138,24 +138,54 @@ class SonarStatusEmitter {
 
   }
 
+  private evaluateTitle(conclusion: Harness.Conclusion, nonFailureTitle: string) {
+    if (conclusion == Harness.Conclusion.ANALYSIS_FAILURE) {
+      return "SonarQube task failure";
+    }
+
+    if (conclusion == Harness.Conclusion.UNDECISIVE) {
+      return "misisng quality gate data";
+    }
+
+    return nonFailureTitle;
+  }
+
+  private evaluateCheckStatus(sonarEvent: SonarWebhookData): Harness.Conclusion {
+    if (sonarEvent.status?.toLowerCase() != "success") {
+      log.info("analysis failure for sonarqube task %s", sonarEvent.taskId);
+      return Harness.Conclusion.ANALYSIS_FAILURE;
+    }
+
+    const isQualityGatePresent = sonarEvent.qualityGate;
+    if (isQualityGatePresent) {
+      return sonarEvent.qualityGate.status == QualityGateStatus.OK ? Harness.Conclusion.PASSED : Harness.Conclusion.BLOCKED;
+    } else {
+      return Harness.Conclusion.UNDECISIVE;
+    }
+  }
+
   public async sendReport(event: SonarAnalysis, source: Harness.ScmSource, uid: string) {
     const summaryTemplateData: SonarCheckRunSummaryTemplate = { event: event.analysisEvent };
 
     (source as Harness.GithubSource).branch = event.analysisEvent.branch ? [ event.analysisEvent.branch.name ] : null ;
+
+    const checkStatus = this.evaluateCheckStatus(event.analysisEvent);
 
     const notificationData: Harness.AnalysisReport = {
       sender: this.context,
       link: this.dashboardUrl(event.analysisEvent),
       source: source,
       uuid: uid,
-      checkStatus: event.analysisEvent.qualityGate.status == QualityGateStatus.OK ? Harness.Conclusion.PASSED : Harness.Conclusion.BLOCKED,
-      title: `${event.analysisEvent.qualityGate.status}`
+      checkStatus: checkStatus,
+      title: this.evaluateTitle(checkStatus, event.analysisEvent.qualityGate?.status)
     };
 
 
     // calculate coverage deltas
     const titleCoverage = await this.processCoverageDeltas(summaryTemplateData, event);
-    notificationData.title += ` - ${titleCoverage}`;
+    if (titleCoverage) {
+      notificationData.title += ` - ${titleCoverage}`;
+    }
 
     try {
       const issueSummary = await this.sonarClient.getIssues(event.analysisEvent.project.key, event.analysisEvent.branch.name);
@@ -183,6 +213,8 @@ class SonarStatusEmitter {
 
     // add summary via template engine
     notificationData.markdown = this.templateEngine.template<SonarCheckRunSummaryTemplate>(Templates.CHECK_RUN_SUMMARY, summaryTemplateData);
+
+    log.debug("sending report to scotty:\n%j", notificationData);
 
     await this.client.sendReport(notificationData);
 
