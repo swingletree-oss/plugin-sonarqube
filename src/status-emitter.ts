@@ -144,7 +144,7 @@ class SonarStatusEmitter {
     }
 
     if (conclusion == Harness.Conclusion.UNDECISIVE) {
-      return "misisng quality gate data";
+      return "missing quality gate data";
     }
 
     return nonFailureTitle;
