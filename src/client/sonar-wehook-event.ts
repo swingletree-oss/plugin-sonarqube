@@ -34,10 +34,10 @@ export interface SonarWebhookData {
 
   properties: any;
 
-  qualityGate: SonarQualityGate;
+  qualityGate?: SonarQualityGate;
 
   serverUrl: string;
-  status: string;
+  status: "SUCCESS" | "FAILED" | string;
   taskId: string;
 }
 

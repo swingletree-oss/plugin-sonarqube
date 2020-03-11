@@ -33,7 +33,7 @@ describe("Sonar Webhook", () => {
 
     responseMock = {sendStatus: sinon.stub()};
 
-    testData = Object.assign({}, require("../mock/base-sonar-webhook.json"));
+    testData = Object.assign({}, require("../mock/webhook/base.json"));
     // reset test data properties for test cases
     testData.properties = {};
 
