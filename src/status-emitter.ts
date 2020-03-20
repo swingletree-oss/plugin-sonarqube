@@ -68,6 +68,10 @@ class SonarStatusEmitter {
 
       summaryTemplateData.branchCoverage = branchCoverage;
 
+      if (Number.isNaN(branchCoverage) || Number.isNaN(deltaCoverage)) {
+        return null;
+      }
+
       return `Coverage: ${branchCoverage.toFixed(1)} (${(deltaCoverage < 0 ? "" : "+")}${deltaCoverage.toFixed(1)}%)`;
     } catch (err) {
       log.warn("failed to calculate coverage delta: ", err);
