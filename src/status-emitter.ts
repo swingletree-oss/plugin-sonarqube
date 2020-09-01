@@ -220,7 +220,11 @@ class SonarStatusEmitter {
 
     log.debug("sending report to scotty:\n%j", notificationData);
 
-    await this.client.sendReport(notificationData);
+    try {
+      return await this.client.sendReport(notificationData);
+    } catch (error) {
+      log.error("could not send payload to scotty.\n%j", error);
+    }
 
     return notificationData;
   }
